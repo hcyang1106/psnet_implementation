@@ -33,13 +33,13 @@ if __name__ == '__main__':
 
 	'''
 	train_loader = Data.DataLoader(data_loader.densepointdataset(mode = 'train'),\
-	 batch_size = Batch_size, shuffle = True, collate_fn = my_collate)
+	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
 	'''
 	test_loader = Data.DataLoader(data_loader.densepointdataset(mode = 'test'), \
-	 batch_size = Batch_size, shuffle = True, collate_fn = my_collate)
+	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
 
 	print(f'learning rate: {lr}, Batch size: {Batch_size}, epochs: {epochs}\n')
-	#model.to(device)
+	model.to(device)
 	
 	Loss = nn.CrossEntropyLoss()
 
@@ -52,9 +52,8 @@ if __name__ == '__main__':
 		#train
 		model.train()
 		for batch, (data, label) in enumerate(test_loader, 1):
-			#data, label = data.to(device), label.to(device)
-			label = label.to(device)
-			print(len(data), data[0].size())
+			data, label = data.to(device).float(), label.to(device).long()
+			#label = label.to(device)
 			optimizer.zero_grad()
 			output = model(data)
 			predict = output.data.max(1)[1]
@@ -64,6 +63,7 @@ if __name__ == '__main__':
 			for e in label:
 				train_label.append(e.item())
 
+			print(predict.shape, label.shape)
 			loss = Loss(output, label)
 
 			loss.backward()
