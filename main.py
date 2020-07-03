@@ -31,10 +31,9 @@ if __name__ == '__main__':
 	model = PSNet.PSNET()
 	optimizer = optim.Adam(model.parameters(), lr = lr, betas=(0.9, 0.999))
 
-	'''
 	train_loader = Data.DataLoader(data_loader.densepointdataset(mode = 'train'),\
 	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
-	'''
+	
 	test_loader = Data.DataLoader(data_loader.densepointdataset(mode = 'test'), \
 	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
 
@@ -46,12 +45,12 @@ if __name__ == '__main__':
 	max_test_acc = 0
 	#start training
 	for epoch in range(1,epochs+1):
-		
+		print("epoch: ", epoch)
 		train_label = []
 		train_predict = []
 		#train
 		model.train()
-		for batch, (data, label) in enumerate(test_loader, 1):
+		for batch, (data, label) in enumerate(train_loader, 1):
 			data, label = data.to(device).float(), label.to(device).long()
 			#label = label.to(device)
 			optimizer.zero_grad()
@@ -63,7 +62,6 @@ if __name__ == '__main__':
 			for e in label:
 				train_label.append(e.item())
 
-			print(predict.shape, label.shape)
 			loss = Loss(output, label)
 
 			loss.backward()
@@ -80,7 +78,7 @@ if __name__ == '__main__':
 		with torch.no_grad():
 
 			for (data, label) in test_loader:   
-				data, label = data.to(device), label.to(device)
+				data, label = data.to(device).float(), label.to(device).long()
 
 				output = model(data)
 				predict = output.data.max(1)[1]
@@ -91,6 +89,8 @@ if __name__ == '__main__':
 					test_label.append(e.item())
 
 		test_acc = accuracy_score(test_label, test_predict)
-		Visualization.plot_confusion_matrix(test_label, test_predict, labels=classes, \
-			normalize = cm_normalize, cmap = plt.cm.Blues, title = use_model + ' ' + name, epoch = epoch)
+		print("test accuracy:", test_acc)
 		max_test_acc = max(max_test_acc, test_acc)
+
+		if epoch % 5 == 0:
+			torch.save(model, './save_model/PSNet_' + str(epoch))
