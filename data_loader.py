@@ -70,14 +70,16 @@ class densepointdataset(data.Dataset):
 		#return len(self.sample_label)
 		#return len(self.point_cloud_label)
 		if self.mode == 'train':
-			return len(self.sample_label)
+			#return len(self.sample_label)
+			return len(self.point_cloud_label)
 		elif self.mode == 'test':
 			return len(self.point_cloud_label)
 
 	def __getitem__(self, index):
 		
 		if self.mode == 'train':
-			point_cloud = PlyData.read(self.sample_data[index])
+			#point_cloud = PlyData.read(self.sample_data[index])
+			point_cloud = PlyData.read(self.point_cloud_path[index])
 		elif self.mode == 'test':
 			point_cloud = PlyData.read(self.point_cloud_path[index])
 
@@ -90,6 +92,7 @@ class densepointdataset(data.Dataset):
 		point_cloud_info = []
 		point_cloud_sample = sample(point_cloud_temp, self.min_point)
 		label = int(self.point_cloud_label[index])
+		'''
 		min_max = np.asarray([[2e9, 2e9, 2e9], [0, 0 , 0]])
 		for e in point_cloud_sample :
 			for i in range(0, 3):
@@ -102,9 +105,9 @@ class densepointdataset(data.Dataset):
 			temp = [(e[i] - min_max[0][i]) / (min_max[1][i] - min_max[0][i]) * 2 - 1 for i in range(0, 3)]
 			temp+=[(e[i]/255.0 - 0.5) *2 for i in range(3, 6)]
 			point_cloud_info.append(temp)
-
+		'''
+		point_cloud_info = point_cloud_sample
 		point_cloud_info = np.asarray(point_cloud_info).T
-
 
 		return point_cloud_info, label
 

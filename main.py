@@ -25,6 +25,7 @@ def my_collate(batch):
 
 if __name__ == '__main__':
 
+	version = '1'
 	Batch_size = 32
 	lr = 0.001
 	epochs = 50
@@ -93,4 +94,4 @@ if __name__ == '__main__':
 		max_test_acc = max(max_test_acc, test_acc)
 
 		if epoch % 5 == 0:
-			torch.save(model, './save_model/PSNet_' + str(epoch))
+			torch.save(model, './save_model/PSNet_' + str(epoch) + '_' + version)
