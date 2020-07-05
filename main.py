@@ -36,7 +36,7 @@ if __name__ == '__main__':
 	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
 	
 	test_loader = Data.DataLoader(data_loader.densepointdataset(mode = 'test'), \
-	 batch_size = Batch_size, shuffle = True)#, collate_fn = my_collate)
+	 batch_size = Batch_size, shuffle = False)#, collate_fn = my_collate)
 
 	print(f'learning rate: {lr}, Batch size: {Batch_size}, epochs: {epochs}\n')
 	model.to(device)
