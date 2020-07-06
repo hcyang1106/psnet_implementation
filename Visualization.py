@@ -56,25 +56,28 @@ def plot_confusion_matrix(y_true, y_pred, labels=None,
     plt.close()
     #plt.show()
 
-def visualize(point_cloud, filename): 
+def show_point_cloud(point_cloud, filename): 
     fig = plt.figure()
     ax = fig.add_subplot(2, 2, 1, projection='3d')
-    xdata = point_cloud[:,0]
-    ydata = point_cloud[:,1]
-    zdata = point_cloud[:,2]
-    ax.scatter3D(xdata, ydata, zdata, c=zdata, s=2, cmap='Reds');
+    for e in point_cloud:
+        xdata = e[0]
+        ydata = e[1]
+        zdata = e[2]
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
 
     ax = fig.add_subplot(2, 2, 2, projection='3d')
-    xdata = point_cloud[:,0]
-    ydata = point_cloud[:,2]
-    zdata = point_cloud[:,1]
-    ax.scatter3D(xdata, ydata, zdata, c=zdata, s=2, cmap='Reds');
+    for e in point_cloud:
+        xdata = e[0]
+        ydata = e[2]
+        zdata = e[1]
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
 
     ax = fig.add_subplot(2, 2, 3, projection='3d')
-    xdata = point_cloud[:,1]
-    ydata = point_cloud[:,2]
-    zdata = point_cloud[:,0]
-    ax.scatter3D(xdata, ydata, zdata, c=zdata, s=2, cmap='Reds');
+    for e in point_cloud:
+        xdata = e[1]
+        ydata = e[2]
+        zdata = e[0]
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
 
     fig.savefig(filename)
     plt.close(fig)   

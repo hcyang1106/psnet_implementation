@@ -1,11 +1,11 @@
-import PSNet
 import torch
 import torch.nn as nn
 import data_loader
 import torch.utils.data as Data
 from plyfile import PlyData, PlyElement
 import numpy as np
-
+from random import sample
+import copy
 class FEL(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(FEL, self).__init__()
@@ -84,18 +84,24 @@ class PSNET(nn.Module):
         x = F.relu(self.bn2(self.fc2(x)))
         x = F.relu(self.bn3(self.fc3(x)))
         '''
+        '''
         x = self.activation(self.bn1(self.fc1(x)))
         x = self.activation(self.bn2(self.fc2(x)))
         x = self.activation(self.bn3(self.fc3(x)))
+        '''
+        x = self.activation(self.fc1(x))
+        x = self.activation(self.fc2(x))
+        x = self.activation(self.fc3(x))
         x = self.fc4(x)
         return x, color_list, geo_list
 
-model = torch.load('PSNet_10_1')
+model = torch.load('./save_model/PSNet_10_1', map_location='cpu')
 torch.save(model.state_dict(), "PSNet_state_dict") 
 
-model = PSNET().cuda()
+model = PSNET()
 model.load_state_dict(torch.load("PSNet_state_dict"))
-model.eval()
+model.cuda()
+#model.eval()
 
 def gram_matrix(input_feature):
     batch, channels, n_pts = input_feature.size()
@@ -117,8 +123,10 @@ style_point_cloud_temp = []
 for e in style_point_cloud_data.elements[0]:
     style_point_cloud_temp.append([e[i] for i in range(0, 6)])
 
-content_point_cloud = torch.Tensor(np.asarray(content_point_cloud_temp).T[:,:5000]).cuda()
-style_point_cloud = torch.Tensor(np.asarray(style_point_cloud_temp).T[:,:5000]).cuda()
+content_point_cloud_temp = sample(content_point_cloud_temp, 5000)
+style_point_cloud_temp = sample(style_point_cloud_temp, 5000)
+content_point_cloud = torch.Tensor(np.asarray(content_point_cloud_temp).T).cuda()
+style_point_cloud = torch.Tensor(np.asarray(style_point_cloud_temp).T).cuda()
 
 content_point_cloud = content_point_cloud.unsqueeze(0)
 style_point_cloud = style_point_cloud.unsqueeze(0)
@@ -128,14 +136,18 @@ style_point_cloud = style_point_cloud.unsqueeze(0)
 # current_point_cloud initialization
 current_point_cloud = content_point_cloud
 criterion = torch.nn.MSELoss()
-
-for epoch in range(100):
+current_geo_part = torch.nn.Parameter(current_point_cloud.data[:, 3:, :])
+current_color_part = torch.nn.Parameter(current_point_cloud.data[:, :3, :])
+geo_optimizer = torch.optim.SGD([current_geo_part], lr=1e-2)
+color_optimizer = torch.optim.SGD([current_color_part], lr=1e-2)
+for epoch in range(1, 100 + 1):
+    par1 = copy.deepcopy(current_geo_part)
+    '''
     current_geo_part = torch.nn.Parameter(current_point_cloud.data[:, 3:, :])
     current_color_part = torch.nn.Parameter(current_point_cloud.data[:, :3, :])
     geo_optimizer = torch.optim.SGD([current_geo_part], lr=1e-2)
     color_optimizer = torch.optim.SGD([current_color_part], lr=1e-2)
-
-
+    '''
     geo_optimizer.zero_grad() 
     color_optimizer.zero_grad() 
 
@@ -158,7 +170,7 @@ for epoch in range(100):
     geo_style_loss = 0.0
     for layer_id in range(len(current_geo_feature)):
         geo_style_loss += criterion(gram_matrix(current_geo_feature[layer_id]), gram_matrix(content_geo_feature[layer_id]))
-
+    
     geo_total_loss = content_weight * geo_content_loss + style_weight * geo_style_loss
     geo_total_loss.backward()
 
@@ -183,3 +195,12 @@ for epoch in range(100):
 
     current_point_cloud = torch.cat((current_color_part.data, current_geo_part.data), 1)
     print(epoch, 'epoch finished.')
+    if epoch % 5 == 0 :
+        np.save("./style transfer/" + "style transfer" + str(epoch), content_point_cloud.squeeze(0).cpu().detach().numpy())
+
+    par2 = copy.deepcopy(current_geo_part)
+    for p1, p2 in zip(par1, par2):
+        for s1, s2 in zip(np.nditer(p1.cpu().detach().numpy()), np.nditer(p2.cpu().detach().numpy())):
+            if s1 != s2:
+                print("different!")
+
