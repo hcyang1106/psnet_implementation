@@ -130,16 +130,18 @@ style_point_cloud = torch.Tensor(np.asarray(style_point_cloud_temp).T).cuda()
 
 content_point_cloud = content_point_cloud.unsqueeze(0)
 style_point_cloud = style_point_cloud.unsqueeze(0)
-
+_, content_color_feature, content_geo_feature = model(content_point_cloud) 
+_, style_color_feature, style_geo_feature = model(style_point_cloud) 
 #print(content_point_cloud.shape)
 
 # current_point_cloud initialization
 current_point_cloud = content_point_cloud
 criterion = torch.nn.MSELoss()
-current_geo_part = torch.nn.Parameter(current_point_cloud.data[:, 3:, :])
-current_color_part = torch.nn.Parameter(current_point_cloud.data[:, :3, :])
+current_geo_part = torch.nn.Parameter(current_point_cloud.data[:, 3:, :], requires_grad=True)
+current_color_part = torch.nn.Parameter(current_point_cloud.data[:, :3, :], requires_grad=True)
 geo_optimizer = torch.optim.SGD([current_geo_part], lr=1e-2)
 color_optimizer = torch.optim.SGD([current_color_part], lr=1e-2)
+model.train()
 for epoch in range(1, 100 + 1):
     par1 = copy.deepcopy(current_geo_part)
     '''
@@ -150,9 +152,6 @@ for epoch in range(1, 100 + 1):
     '''
     geo_optimizer.zero_grad() 
     color_optimizer.zero_grad() 
-
-    _, content_color_feature, content_geo_feature = model(content_point_cloud) 
-    _, style_color_feature, style_geo_feature = model(style_point_cloud) 
 
     _, current_color_feature, current_geo_feature = model(current_point_cloud) 
 
@@ -173,8 +172,8 @@ for epoch in range(1, 100 + 1):
     
     geo_total_loss = content_weight * geo_content_loss + style_weight * geo_style_loss
     print(geo_total_loss)
-    geo_total_loss.backward()
-
+    geo_total_loss.backward(retain_graph=True)
+    print("??")
     geo_optimizer.step()
 
     # color part
@@ -190,6 +189,7 @@ for epoch in range(1, 100 + 1):
         color_style_loss += criterion(gram_matrix(current_color_feature[layer_id]), gram_matrix(style_color_feature[layer_id]))
 
     color_total_loss = content_weight * color_content_loss + style_weight * color_style_loss
+    print(color_total_loss)
     color_total_loss.backward()
 
     color_optimizer.step()
