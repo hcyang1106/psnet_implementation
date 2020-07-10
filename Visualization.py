@@ -63,21 +63,21 @@ def show_point_cloud(point_cloud, filename):
         xdata = e[0]
         ydata = e[1]
         zdata = e[2]
-        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/256).reshape(1, 3));#, c=zdata
 
     ax = fig.add_subplot(2, 2, 2, projection='3d')
     for e in point_cloud:
         xdata = e[0]
         ydata = e[2]
         zdata = e[1]
-        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/256).reshape(1, 3));#, c=zdata
 
     ax = fig.add_subplot(2, 2, 3, projection='3d')
     for e in point_cloud:
         xdata = e[1]
         ydata = e[2]
         zdata = e[0]
-        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/255).reshape(1, 3));#, c=zdata
+        ax.scatter3D(xdata, ydata, zdata, s=2, c=(e[3:]/256).reshape(1, 3));#, c=zdata
 
     fig.savefig(filename)
     plt.close(fig)   

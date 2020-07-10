@@ -94,8 +94,8 @@ def gram_matrix(input_feature):
 #for param in model.parameters():   # fix all the weights
 #    param.requires_grad = False
 
-content_point_cloud_data = PlyData.read('1a1a5facf2b73e534e23e9314af9ae57.ply')
-style_point_cloud_data = PlyData.read('1b5fc54e45c8768490ad276cd2af3a4.ply')
+content_point_cloud_data = PlyData.read('1c111a837580fda6c3bd24f986301745.ply')
+style_point_cloud_data = PlyData.read('dee83e7ab66cd504d88da0963249578d.ply')
 
 content_point_cloud_temp = []
 for e in content_point_cloud_data.elements[0]:
@@ -110,7 +110,7 @@ style_point_cloud_temp = sample(style_point_cloud_temp, 5000)
 content_point_cloud = torch.Tensor(np.asarray(content_point_cloud_temp).T).cuda().unsqueeze(0)
 style_point_cloud = torch.Tensor(np.asarray(style_point_cloud_temp).T).cuda().unsqueeze(0)
 
-content_color_feature, content_geo_feature = model(content_point_cloud.data[:, :3, :], content_point_cloud.data[:, 3:, :]) 
+content_color_feature, content_geo_feature = model(content_point_cloud[:, :3, :], content_point_cloud[:, 3:, :]) 
 style_color_feature, style_geo_feature = model(style_point_cloud[:, :3, :], style_point_cloud[:, 3:, :]) 
 #print(content_point_cloud.shape)
 
@@ -120,11 +120,11 @@ current_geo_part = torch.nn.Parameter(content_point_cloud.data[:, 3:, :], requir
 current_color_part = torch.nn.Parameter(content_point_cloud.data[:, :3, :], requires_grad=True)
 current_geo_part = current_geo_part.cuda()
 current_color_part = current_color_part.cuda()
-geo_optimizer = torch.optim.SGD([current_geo_part.requires_grad_()], lr=1e-2)
-color_optimizer = torch.optim.SGD([current_color_part.requires_grad_()], lr=1e-2)
-for epoch in range(1, 100 + 1):
-
-    par1 = copy.deepcopy(current_geo_part.detach())
+#geo_optimizer = torch.optim.SGD([current_geo_part.requires_grad_()], lr=1e-2)
+geo_optimizer = torch.optim.Adam([current_geo_part.requires_grad_()], lr=1e-1, betas=(0.9, 0.999))
+color_optimizer = torch.optim.Adam([current_color_part.requires_grad_()], lr=1e-1, betas=(0.9, 0.999))
+#color_optimizer = torch.optim.SGD([current_color_part.requires_grad_()], lr=1e-2)
+for epoch in range(1, 4000 + 1):
     '''
     current_geo_part = torch.nn.Parameter(current_point_cloud.data[:, 3:, :])
     current_color_part = torch.nn.Parameter(current_point_cloud.data[:, :3, :])
@@ -136,25 +136,23 @@ for epoch in range(1, 100 + 1):
 
     current_color_feature, current_geo_feature = model(current_color_part, current_geo_part) 
 
-    content_weight = 1.0
-    style_weight = 1.0
-
+    style_geo_weight = 1.0
+    style_color_weight = 100.0
     # geo part
 
     # content
     geo_content_loss = 0.0
-    for layer_id in range(len(current_geo_feature)):
+    for layer_id in range(1):#len(current_geo_feature)):
         geo_content_loss += criterion(current_geo_feature[layer_id], content_geo_feature[layer_id])
 
     # style
     geo_style_loss = 0.0
-    for layer_id in range(len(current_geo_feature)):
+    for layer_id in range(1):#len(current_geo_feature)):
         geo_style_loss += criterion(gram_matrix(current_geo_feature[layer_id]), gram_matrix(style_geo_feature[layer_id]))
     
-    geo_total_loss = content_weight * geo_content_loss + style_weight * geo_style_loss
+    geo_total_loss = geo_content_loss + style_geo_weight * geo_style_loss
     print(geo_total_loss)
     geo_total_loss.backward(retain_graph=True)
-    print("??")
     geo_optimizer.step()
 
     # color part
@@ -166,23 +164,18 @@ for epoch in range(1, 100 + 1):
 
     # style
     color_style_loss = 0.0
-    for layer_id in range(len(current_color_feature)):
+    for layer_id in range(1):#len(current_color_feature)):
         color_style_loss += criterion(gram_matrix(current_color_feature[layer_id]), gram_matrix(style_color_feature[layer_id]))
 
-    color_total_loss = content_weight * color_content_loss + style_weight * color_style_loss
+    color_total_loss = color_content_loss + style_color_weight * color_style_loss
     print(color_total_loss)
     color_total_loss.backward(retain_graph=True)
 
     color_optimizer.step()
 
-    #current_point_cloud = torch.cat((current_color_part.data, current_geo_part.data), 1)
+    current_point_cloud = torch.cat((current_color_part.data, current_geo_part.data), 1)
     print(epoch, 'epoch finished.')
-    '''
-    if epoch % 5 == 0 :
+    
+    if epoch % 100 == 0 :
         np.save("./style transfer/" + "style transfer" + str(epoch), content_point_cloud.squeeze(0).cpu().detach().numpy())
-    '''
-    par2 = copy.deepcopy(current_geo_part.detach())
-    for p1, p2 in zip(par1, par2):
-        for s1, s2 in zip(np.nditer(p1.cpu().detach().numpy()), np.nditer(p2.cpu().detach().numpy())):
-            if s1 != s2:
-                print("different!")
+    
