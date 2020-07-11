@@ -86,6 +86,7 @@ class densepointdataset(data.Dataset):
 		point_cloud_temp = []
 		#six dim XYZ RGB
 		#normalize to 1 ~ -1
+		print(point_cloud.elements[0])
 		for e in point_cloud.elements[0]:
 			point_cloud_temp.append([e[i] for i in range(0, 6)])
 

@@ -24,7 +24,7 @@ style_point_cloud = np.asarray(style_point_cloud_temp)
 Visualization.show_point_cloud_three_view(content_point_cloud, 'content.jpg')
 Visualization.show_point_cloud_three_view(style_point_cloud, 'style.jpg')
 '''
-for e in range(800, 4001, 100):
+for e in range(100, 4001, 100):
 	print(e)
 	epoch = str(e)
 	point_cloud = np.load('./style transfer/style transfer' + epoch + '.npy')

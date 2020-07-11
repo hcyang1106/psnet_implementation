@@ -75,7 +75,7 @@ class PSNET(nn.Module):
         x_geo = self.geoFEL4(x_geo)
         geo_list.append(x_geo)
         
-        return color_list, geo_list
+        return geo_list, color_list
 
 model = torch.load('./save_model/PSNet_10_1', map_location='cpu')
 torch.save(model.state_dict(), "PSNet_state_dict") 
@@ -116,13 +116,13 @@ style_color_feature, style_geo_feature = model(style_point_cloud[:, :3, :], styl
 
 # current_point_cloud initialization
 criterion = torch.nn.MSELoss()
-current_geo_part = torch.nn.Parameter(content_point_cloud.data[:, 3:, :], requires_grad=True)
-current_color_part = torch.nn.Parameter(content_point_cloud.data[:, :3, :], requires_grad=True)
+current_geo_part = torch.nn.Parameter(content_point_cloud.data[:, :3, :], requires_grad=True)
+current_color_part = torch.nn.Parameter(content_point_cloud.data[:, 3:, :], requires_grad=True)
 current_geo_part = current_geo_part.cuda()
 current_color_part = current_color_part.cuda()
 #geo_optimizer = torch.optim.SGD([current_geo_part.requires_grad_()], lr=1e-2)
 geo_optimizer = torch.optim.Adam([current_geo_part.requires_grad_()], lr=1e-1, betas=(0.9, 0.999))
-color_optimizer = torch.optim.Adam([current_color_part.requires_grad_()], lr=1e-1, betas=(0.9, 0.999))
+color_optimizer = torch.optim.Adam([current_color_part.requires_grad_()], lr=1, betas=(0.9, 0.999))
 #color_optimizer = torch.optim.SGD([current_color_part.requires_grad_()], lr=1e-2)
 for epoch in range(1, 4000 + 1):
     '''
@@ -134,13 +134,15 @@ for epoch in range(1, 4000 + 1):
     geo_optimizer.zero_grad() 
     color_optimizer.zero_grad() 
 
-    current_color_feature, current_geo_feature = model(current_color_part, current_geo_part) 
+    current_color_feature, current_geo_feature = model(current_geo_part, current_color_part) 
 
     style_geo_weight = 1.0
-    style_color_weight = 100.0
+    style_color_weight = 100000000000000.0
+    
     # geo part
 
     # content
+    '''
     geo_content_loss = 0.0
     for layer_id in range(1):#len(current_geo_feature)):
         geo_content_loss += criterion(current_geo_feature[layer_id], content_geo_feature[layer_id])
@@ -154,9 +156,8 @@ for epoch in range(1, 4000 + 1):
     print(geo_total_loss)
     geo_total_loss.backward(retain_graph=True)
     geo_optimizer.step()
-
+    '''
     # color part
-
     # content
     color_content_loss = 0.0
     for layer_id in range(1):#len(current_color_feature)):
@@ -173,7 +174,7 @@ for epoch in range(1, 4000 + 1):
 
     color_optimizer.step()
 
-    current_point_cloud = torch.cat((current_color_part.data, current_geo_part.data), 1)
+    current_point_cloud = torch.cat((current_geo_part.data, current_color_part.data), 1)
     print(epoch, 'epoch finished.')
     
     if epoch % 100 == 0 :
