@@ -21,8 +21,11 @@ content_point_cloud = np.asarray(content_point_cloud_temp)
 style_point_cloud = np.asarray(style_point_cloud_temp)
 
 '''
-Visualization.show_point_cloud(content_point_cloud, 'test.jpg')
-Visualization.show_point_cloud(style_point_cloud, 'test2.jpg')
+Visualization.show_point_cloud_three_view(content_point_cloud, 'content.jpg')
+Visualization.show_point_cloud_three_view(style_point_cloud, 'style.jpg')
 '''
-point_cloud = np.load('./style transfer/style transfer600.npy')
-Visualization.show_point_cloud(point_cloud.T, 'test3.jpg')
+for e in range(800, 4001, 100):
+	print(e)
+	epoch = str(e)
+	point_cloud = np.load('./style transfer/style transfer' + epoch + '.npy')
+	Visualization.show_point_cloud_three_view(point_cloud.T, './result/epoch' + epoch + '.jpg')
